@@ -442,6 +442,18 @@ body.inquiz.lite #grid i{animation-play-state:paused}
 @keyframes pwl{from{opacity:0;transform:translateY(8px)}}
 .lite .rip{animation-duration:.45s;box-shadow:none}
 @media(max-width:860px){#gfxb{width:44px;height:44px}}
+#stu .hero-cat.acat{zoom:.72;min-height:300px;margin-bottom:-24px}
+#adm .hero-cat.acat{zoom:.5;min-height:300px;margin-bottom:-40px}
+@media(max-width:860px){#stu .hero-cat.acat{zoom:.62;min-height:260px}}
+/* v6: thông báo không còn che thanh công cụ / bảng câu hỏi */
+#toast{width:max-content;max-width:calc(100vw - 24px);text-align:center;line-height:1.35;border-radius:14px;opacity:0;pointer-events:none;transition:transform .25s,opacity .2s}
+#toast.on{opacity:1}
+@media(max-width:860px){
+ #toast{bottom:calc(var(--tb,0px) + 70px + env(safe-area-inset-bottom,0px));font-size:.82rem;padding:7px 14px}
+ body.palopen #toast{bottom:auto;top:calc(var(--bh,100px) + 10px)}
+ body.inquiz #gfxb{opacity:.55;transform:scale(.84);transition:opacity .2s,transform .2s}
+ body.inquiz #gfxb:active,body.inquiz #gfxb[aria-expanded=true]{opacity:1;transform:none}
+}
 </style>
 
 <canvas id="fx" aria-hidden="true"></canvas>
@@ -481,6 +493,7 @@ body.inquiz.lite #grid i{animation-play-state:paused}
 <div id="stu" class="hide">
  <div class="top"><h2><span id="sname"></span><small>Học sinh</small></h2><span class="sp"></span><button id="slogout" type="button">Đăng xuất</button></div>
  <div class="page">
+  <div class="hero-cat acat"><div class="ring r1 heavy"></div><div class="ring r2 heavy"></div><div class="orbit heavy"><i></i></div><div class="radar"></div><div class="proj"></div><div class="frame" id="scatf"></div></div>
   <div class="cols">
    <div class="set">
     <h3>Nhập mã bài tập</h3>
@@ -499,6 +512,7 @@ body.inquiz.lite #grid i{animation-play-state:paused}
 <div id="adm" class="hide">
  <div class="top"><h2>Quản trị<small id="aname"></small></h2><span class="sp"></span><button id="alogout" type="button">Đăng xuất</button></div>
  <div class="page">
+  <div class="hero-cat acat"><div class="ring r1 heavy"></div><div class="ring r2 heavy"></div><div class="orbit heavy"><i></i></div><div class="radar"></div><div class="proj"></div><div class="frame" id="mcatf"></div></div>
   <div class="tabs" id="atabs"><button data-t="sets" class="on" type="button">Bài tập</button><button data-t="res" type="button">Kết quả</button><button data-t="stu" type="button">Học sinh</button></div>
   <div id="admbody" class="page"></div>
  </div>
@@ -559,6 +573,7 @@ body.inquiz.lite #grid i{animation-play-state:paused}
  <label><input type="checkbox" id="oS"> Âm thanh và rung nhẹ</label>
  <label><input type="checkbox" id="oB"> Hiệu ứng khởi động khi chuyển màn (mức Đầy đủ)</label>
  <button id="gauto" type="button">Tự chọn theo thiết bị</button>
+ <p class="gdesc" style="min-height:0">Phím tắt: G mở bảng này (ngoài lúc làm bài), Esc để đóng.</p>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="cur" class="heavy" aria-hidden="true"></div>
@@ -738,8 +753,8 @@ function finish(){
   <div class="bars">${parts.map(([n,a,t])=>`<div><div class="in"><span>${n}</span><span class="sp"></span><b>${a}/${t}</b></div><div class="bar2"><i data-w="${t?a/t*100:0}"></i></div></div>`).join('')}</div>
   <p class="rsay">Thời gian làm bài: ${Math.floor(sec/60)} phút ${sec%60} giây. Mỗi câu trắc nghiệm và mỗi ý đúng/sai tính 1 điểm, quy về thang 10.</p>
   <p class="cr-foot">◈ ${esc(CONFIG.credit)} ◈</p>
-  <div class="racts"><button id="a1" class="p">Xem lại bài</button><button id="a2">Làm lại (xáo trộn)</button><button id="a3" ${bad.size?'':'disabled'}>Chỉ làm lại câu sai (${bad.size})</button><button id="a4">Trang chủ</button></div>`;
-  $('#a1').onclick=()=>show('quiz');$('#a2').onclick=()=>start();$('#a3').onclick=()=>start(bad);$('#a4').onclick=()=>show('home');
+  <div class="racts"><button id="a1" class="p">Xem lại bài</button><button id="a2">Làm lại (xáo trộn)</button><button id="a3" ${bad.size?'':'disabled'}>Chỉ làm lại câu sai (${bad.size})</button><button id="a5">Chép kết quả</button><button id="a4">Trang chủ</button></div>`;
+  $('#a1').onclick=()=>show('quiz');$('#a2').onclick=()=>start();$('#a3').onclick=()=>start(bad);$('#a4').onclick=()=>show('home');$('#a5').onclick=()=>copyText(`${CONFIG.title}: ${(p*10).toFixed(2)}/10, hạng ${rk}, ${ok}/${qs.length} câu đúng, ${Math.floor(sec/60)} phút ${sec%60} giây`);
   $('#tools').classList.add('hide');$('#rtools').classList.remove('hide');render();show('result');
   $$('#rcard [data-n]').forEach(countUp);requestAnimationFrame(()=>requestAnimationFrame(()=>{$$('.bar2 i').forEach(i=>i.style.width=i.dataset.w+'%');$('#arc').style.strokeDashoffset=553*(1-p)}));
   const t=performance.now(),to=p*10;(function f(n){const k=Math.min(1,(n-t)/1300);$('#sc').textContent=(to*(1-Math.pow(1-k,3))).toFixed(2);if(k<1)requestAnimationFrame(f)})(t);
@@ -1069,6 +1084,15 @@ async function loadAdm(){
   }catch(e){$('#admbody').innerHTML='<p class="err">'+esc(errMsg(e))+'</p>';return}
   admView();
 }
+const DB=[['Dưới 5',0,5],['5 đến dưới 7',5,7],['7 đến dưới 8,5',7,8.5],['8,5 trở lên',8.5,10.01]];
+function copyText(t){const ok=()=>toast('Đã chép kết quả');if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,()=>toast('Không chép được, hãy thử lại'));else{const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){toast('Không chép được')}a.remove()}}
+function exportCSV(rows){
+  const q=v=>{v=String(v==null?'':v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'};
+  const h=['Họ tên','Tên đăng nhập','Bài','Mã bài','Điểm /10','Đúng','Tổng','Thời gian (giây)','Lúc làm'];
+  const L=[h.map(q).join(',')].concat(rows.map(r=>[r.name||r.u,r.u,r.title,r.code,(+r.score).toFixed(2),r.ok,r.total,r.sec||0,new Date(r.at).toLocaleString('vi-VN')].map(q).join(',')));
+  const b=new Blob(['\ufeff'+L.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='ket-qua-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);toast('Đã xuất '+rows.length+' dòng');
+}
 function admView(){
   $$('#atabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==ADM.tab));
   const B=$('#admbody');
@@ -1103,9 +1127,10 @@ d) Việt Nam không giáp biển.</pre>
     const codes=[...new Set(ADM.res.map(r=>r.code))],rows=ADM.res.filter(r=>ADM.rf=='all'||r.code==ADM.rf).slice(0,300);
     const avg=rows.length?rows.reduce((a,r)=>a+r.score,0)/rows.length:0;
     B.innerHTML=`<div class="set"><div class="fr"><h3>Kết quả</h3><span class="sp"></span><select id="rf" aria-label="Lọc theo bài"><option value="all">Tất cả bài</option>${codes.map(c=>{const t=(ADM.res.find(r=>r.code==c)||{}).title;return `<option value="${esc(c)}" ${ADM.rf==c?'selected':''}>${esc(t||'')} (${esc(c)})</option>`}).join('')}</select></div>
-    <p class="mode">${rows.length} lượt làm · điểm trung bình ${avg.toFixed(2)}</p></div>
+    <p class="mode">${rows.length} lượt làm · điểm trung bình ${avg.toFixed(2)}${rows.length?` · cao nhất ${Math.max(...rows.map(r=>r.score)).toFixed(2)} · thấp nhất ${Math.min(...rows.map(r=>r.score)).toFixed(2)}`:''}</p>
+    ${rows.length?`<div class="bars">${DB.map(([n,lo,hi])=>{const c=rows.filter(r=>r.score>=lo&&r.score<hi).length;return `<div><div class="in"><span>${n}</span><span class="sp"></span><b>${c}</b></div><div class="bar2"><i style="width:${c/rows.length*100}%"></i></div></div>`}).join('')}</div><button type="button" id="rexp">⬇ Xuất Excel (CSV)</button>`:''}</div>
     ${rows.length?`<div class="tw"><table class="tb"><thead><tr><th>Học sinh</th><th>Bài</th><th>Điểm</th><th>Đúng</th><th>Thời gian</th><th>Lúc</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.name||r.u)}<br><span class="lbl">${esc(r.u)}</span></td><td>${esc(r.title)}<br><span class="lbl">${esc(r.code)}${r.full===false?' · một phần':''}</span></td><td class="nw"><b>${(+r.score).toFixed(2)}</b>/10</td><td class="nw">${r.ok}/${r.total}</td><td class="nw">${fmtT(r.sec||0)}</td><td class="nw">${fmtD(r.at)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có học sinh nào làm bài.</div>'}`;
-    $('#rf').onchange=e=>{ADM.rf=e.target.value;admView()};
+    $('#rf').onchange=e=>{ADM.rf=e.target.value;admView()};if($('#rexp'))$('#rexp').onclick=()=>exportCSV(ADM.res.filter(r=>ADM.rf=='all'||r.code==ADM.rf));
   }else{
     const by={};ADM.res.forEach(r=>(by[r.u]=by[r.u]||[]).push(r));
     B.innerHTML=`<div class="set"><h3>Học sinh · ${ADM.acc.length} tài khoản</h3></div>${ADM.acc.length?`<div class="tw"><table class="tb"><thead><tr><th>Họ tên</th><th>Tên đăng nhập</th><th>Lượt làm</th><th>Điểm TB</th><th>Lần cuối</th><th></th></tr></thead><tbody>${ADM.acc.map(a=>{const r=by[a.u]||[],av=r.length?r.reduce((x,y)=>x+y.score,0)/r.length:0;
@@ -1215,9 +1240,13 @@ $('#oB').onchange=()=>{PREF.boot=$('#oB').checked;savePref()};
 $('#gauto').onclick=()=>{setLv(autoLv());toast('Đã chọn mức '+['Tắt','Nhẹ','Đầy đủ'][PREF.lv]+' theo thiết bị')};
 $('#ashow').onchange=()=>{$('#ap').type=$('#ap2').type=$('#ashow').checked?'text':'password'};
 new MutationObserver(()=>document.body.classList.toggle('palopen',$('#pal').classList.contains('open'))).observe($('#pal'),{attributes:true,attributeFilter:['class']});
+addEventListener('keydown',e=>{if((e.key=='g'||e.key=='G')&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)&&$('#quiz').classList.contains('hide'))gfxToggle()});
+addEventListener('offline',()=>toast('Mất kết nối mạng, dữ liệu chung tạm thời không đồng bộ'));
+addEventListener('online',()=>toast('Đã có mạng trở lại'));
+try{navigator.getBattery&&navigator.getBattery().then(b=>{const chk=()=>{if(!b.charging&&b.level<.2&&PREF.lv==2&&!sessionStorage.getItem('batt')){sessionStorage.setItem('batt','1');toast('Pin dưới 20%. Mở ⚙ chọn mức Nhẹ để tiết kiệm pin nhé')}};b.addEventListener('levelchange',chk);chk()})}catch(e){}
 /* ---------- Khởi động ---------- */
 async function startApp(){
-  $('#acatf').innerHTML=im(CATS[2]);decode($('#atitle'),'Luyện tập');authUI();
+  $('#acatf').innerHTML=im(CATS[2]);$('#scatf').innerHTML=im(CATS[1]);$('#mcatf').innerHTML=im(CATS[3]);decode($('#atitle'),'Luyện tập');authUI();
   try{await initStore()}catch(e){$('#mode').textContent='Chưa kết nối được kho dữ liệu: '+errMsg(e)}
   let me=null;try{me=JSON.parse(localStorage.getItem('holo:me'))}catch(e){}
   if(me&&me.u&&ST){try{const a=await ST.get('accounts/'+me.u);if(a&&(a.role!='admin'||ST.mode=='local'||ST.canEdit)){enter(a,true);return}}catch(e){}}
