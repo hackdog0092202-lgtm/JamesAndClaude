@@ -1,5 +1,5 @@
 <!doctype html><html lang="vi"><head><meta name="theme-color" content="#02060f"><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Luyện Tập Hologram</title>
+<title>AzerNova</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;600&family=Share+Tech+Mono&display=swap">
 <style>
 :root{--bg:#02060f;--ink:#d8f6ff;--mute:#86b2c6;--cy:#00f0ff;--mg:#ff2bd6;--am:#ffb800;--ok:#2dffa0;--no:#ff3b5c;--pan:rgba(4,28,48,.62);--line:rgba(0,240,255,.5);--glow:0 0 14px rgba(0,240,255,.3);--hd:"Exo 2","Be Vietnam Pro",system-ui,sans-serif;--mono:"Share Tech Mono",ui-monospace,Menlo,monospace}
@@ -446,6 +446,26 @@ body.inquiz.lite #grid i{animation-play-state:paused}
 #adm .hero-cat.acat{zoom:.5;min-height:300px;margin-bottom:-40px}
 @media(max-width:860px){#stu .hero-cat.acat{zoom:.62;min-height:260px}}
 #tm.low{color:var(--no);text-shadow:0 0 8px var(--no);animation:blink 1s infinite}
+/* v7: chữ AzerNova + giao diện đăng nhập */
+.ttlw{position:relative;display:inline-block}
+#atitle{display:inline-block;letter-spacing:.05em;text-shadow:none;filter:drop-shadow(0 0 10px rgba(0,240,255,.5))}
+#atitle .lt{display:inline-block;background:linear-gradient(100deg,#eaffff 0%,#7ff6ff 28%,#ff7be9 52%,#eaffff 78%,#eaffff 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;transition:scale .2s;animation:ltin .7s cubic-bezier(.2,.9,.3,1.2) backwards,ltshine 5s linear infinite,ltwave 3.2s ease-in-out infinite;animation-delay:calc(var(--i)*80ms),calc(var(--i)*-.35s),calc(var(--i)*120ms + 1.3s)}
+#atitle .lt:hover{scale:1.28}
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){#atitle .lt{color:#eaffff;-webkit-text-fill-color:currentColor}}
+@keyframes ltin{from{opacity:0;translate:0 16px;scale:.7}}
+@keyframes ltshine{to{background-position:-300% 0}}
+@keyframes ltwave{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.spk{position:absolute;color:#fff;font-size:14px;line-height:1;pointer-events:none;text-shadow:0 0 8px var(--cy),0 0 16px var(--cy);animation:twk 2.6s ease-in-out infinite;animation-delay:var(--d,0s)}
+@keyframes twk{0%,100%{opacity:.15;transform:scale(.5) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(45deg)}}
+.lite #atitle .lt{animation:ltin .5s backwards;animation-delay:calc(var(--i)*60ms)}
+.nofx .spk{display:none}
+html.notxt #atitle .lt{animation:none}
+html.notxt .spk,html.notxt #asub0::after{display:none}
+#asub0::after{content:"▍";margin-left:2px;color:var(--cy);animation:blink 1s steps(2) infinite}
+#auth .lbl::before{content:"✦ ";color:var(--mg);font-size:.7em;opacity:.85}
+#auth .set input:focus{outline:0;border-color:var(--cy);box-shadow:0 0 0 1px var(--cy),0 0 18px rgba(0,240,255,.3)}
+#aerr:not(:empty){animation:shk .4s}
+@keyframes shk{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
 /* v6: thông báo không còn che thanh công cụ / bảng câu hỏi */
 #toast{width:max-content;max-width:calc(100vw - 24px);text-align:center;line-height:1.35;border-radius:14px;opacity:0;pointer-events:none;transition:transform .25s,opacity .2s}
 #toast.on{opacity:1}
@@ -467,11 +487,11 @@ body.inquiz.lite #grid i{animation-play-state:paused}
  <div class="hero">
   <div>
    <span class="cr cr-badge" data-p="◈ "></span>
-   <h1 id="atitle">Luyện tập</h1>
-   <p id="asub0" class="mode" style="margin:10px 0 18px">&gt; Đăng nhập để vào làm bài</p>
+   <div class="ttlw"><h1 id="atitle">AzerNova</h1><span class="spk heavy" aria-hidden="true" style="left:-22px;top:2px;--d:0s">✦</span><span class="spk heavy" aria-hidden="true" style="right:-18px;top:-6px;--d:.9s;font-size:10px">✦</span><span class="spk heavy" aria-hidden="true" style="left:34%;top:-14px;--d:1.7s;font-size:9px">✦</span><span class="spk heavy" aria-hidden="true" style="right:12%;bottom:-8px;--d:.5s;font-size:12px">✦</span><span class="spk heavy" aria-hidden="true" style="left:-8px;bottom:-4px;--d:2.2s;font-size:8px">✦</span></div>
+   <p id="asub0" class="mode" style="margin:10px 0 18px">&gt; Warp Gate · Cập bến để vào làm bài</p>
    <div class="set">
     <div class="tabs" id="arole"><button data-r="s" class="on" type="button">Học sinh</button><button data-r="a" type="button">Quản trị</button></div>
-    <div class="tabs" id="amode"><button data-m="in" class="on" type="button">Đăng nhập</button><button data-m="up" type="button">Đăng ký</button></div>
+    <div class="tabs" id="amode"><button data-m="in" class="on" type="button">Cập bến</button><button data-m="up" type="button">Gia nhập</button></div>
     <label class="lbl" for="au">Tên đăng nhập</label>
     <input type="text" id="au" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ví dụ: nguyenvana">
     <label class="lbl reg hide" for="an">Họ và tên</label>
@@ -573,6 +593,7 @@ body.inquiz.lite #grid i{animation-play-state:paused}
  <div class="seg" id="gZ"><button type="button" data-v="100">Vừa</button><button type="button" data-v="115">Lớn</button><button type="button" data-v="130">Rất lớn</button></div>
  <label><input type="checkbox" id="oS"> Âm thanh và rung nhẹ</label>
  <label><input type="checkbox" id="oB"> Hiệu ứng khởi động khi chuyển màn (mức Đầy đủ)</label>
+ <label><input type="checkbox" id="oT"> Hiệu ứng chữ (tiêu đề, dòng gõ, lấp lánh)</label>
  <button id="gauto" type="button">Tự chọn theo thiết bị</button>
  <p class="gdesc" style="min-height:0">Phím tắt: G mở bảng này (ngoài lúc làm bài), Esc để đóng.</p>
 </div>
@@ -615,7 +636,7 @@ const PREF={lv:2,snd:false,fz:100};
 const savePref=()=>{try{localStorage.setItem('holo:pref',JSON.stringify(PREF))}catch(e){}};
 const GD=['Tắt mọi hiệu ứng nền và chuyển động. Tiết kiệm pin nhất.','Sao nhẹ, lưới và tinh vân tĩnh, gợn sóng khi chạm. Hợp điện thoại và máy yếu.','Mưa mã, sao băng, hành tinh, con trỏ hologram và chuyển cảnh. Cần máy khỏe.'];
 const autoLv=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:(matchMedia('(pointer:coarse)').matches||innerWidth<860||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4)?1:2;
-function applyPref(){const c=document.documentElement.classList;c.toggle('nofx',!PREF.lv);c.toggle('lite',PREF.lv==1);$('#oS').checked=PREF.snd;$('#oB').checked=PREF.boot!==false;document.documentElement.style.fontSize=PREF.fz+'%';
+function applyPref(){const c=document.documentElement.classList;c.toggle('nofx',!PREF.lv);c.toggle('lite',PREF.lv==1);$('#oS').checked=PREF.snd;$('#oB').checked=PREF.boot!==false;$('#oT').checked=PREF.txt!==false;c.toggle('notxt',PREF.txt===false);document.documentElement.style.fontSize=PREF.fz+'%';
   $$('#gF button').forEach(b=>b.classList.toggle('on',+b.dataset.v==PREF.lv));$$('#gZ button').forEach(b=>b.classList.toggle('on',+b.dataset.v==PREF.fz));$$('#gF button,#gZ button').forEach(b=>b.setAttribute('aria-pressed',b.classList.contains('on')));$('#gdesc').textContent=GD[PREF.lv]}
 const memes=()=>[...CONFIG.memes,...extra],pool=()=>[...CATS,...memes()];
 const isDone=q=>q.type=='m'?ans[q.k]!==undefined:q.s.every(s=>ans[q.k+'-'+s.j]!==undefined);
@@ -1011,7 +1032,8 @@ function authUI(){
   $$('#amode button').forEach(b=>b.classList.toggle('on',b.dataset.m==aMode));
   $('#amode').classList.toggle('hide',aRole=='a');
   $$('.reg').forEach(e=>e.classList.toggle('hide',aMode!='up'));
-  $('#asub').textContent=aMode=='up'?'Tạo tài khoản':'Đăng nhập';
+  $('#asub').textContent=aMode=='up'?'Gia nhập phi hành đoàn':'Cập bến trạm';
+  {const st=aRole=='a'?'> Khu vực chỉ huy · dành cho Admin':aMode=='up'?'> Gia nhập phi hành đoàn AzerNova':'> Warp Gate · Cập bến để vào làm bài',e=$('#asub0');if(e.dataset.t!==st){e.dataset.t=st;typeSub(e,st)}}
   $('#ap').autocomplete=aMode=='up'?'new-password':'current-password';
   $('#aerr').textContent='';
 }
@@ -1262,9 +1284,13 @@ addEventListener('keydown',e=>{if((e.key=='g'||e.key=='G')&&!e.ctrlKey&&!e.metaK
 addEventListener('offline',()=>toast('Mất kết nối mạng, dữ liệu chung tạm thời không đồng bộ'));
 addEventListener('online',()=>toast('Đã có mạng trở lại'));
 try{navigator.getBattery&&navigator.getBattery().then(b=>{const chk=()=>{if(!b.charging&&b.level<.2&&PREF.lv==2&&!sessionStorage.getItem('batt')){sessionStorage.setItem('batt','1');toast('Pin dưới 20%. Mở ⚙ chọn mức Nhẹ để tiết kiệm pin nhé')}};b.addEventListener('levelchange',chk);chk()})}catch(e){}
+var tyT=0;
+function typeSub(el,t){clearInterval(tyT);if(!PREF.lv||PREF.txt===false){el.textContent=t;return}let i=0;el.textContent='';tyT=setInterval(()=>{el.textContent=t.slice(0,++i);if(i>=t.length)clearInterval(tyT)},28)}
+function buildTitle(t){const h=$('#atitle');h.setAttribute('aria-label',t);h.innerHTML=[...t].map((c,i)=>`<span class="lt" aria-hidden="true" style="--i:${i}">${c==' '?'&nbsp;':esc(c)}</span>`).join('')}
+$('#oT').onchange=()=>{PREF.txt=$('#oT').checked;savePref();applyPref();buildTitle('AzerNova');const e=$('#asub0');if(e.dataset.t)typeSub(e,e.dataset.t)};
 /* ---------- Khởi động ---------- */
 async function startApp(){
-  $('#acatf').innerHTML=im(CATS[2]);$('#scatf').innerHTML=im(CATS[1]);$('#mcatf').innerHTML=im(CATS[3]);decode($('#atitle'),'Luyện tập');authUI();
+  $('#acatf').innerHTML=im(CATS[2]);$('#scatf').innerHTML=im(CATS[1]);$('#mcatf').innerHTML=im(CATS[3]);buildTitle('AzerNova');authUI();
   try{await initStore()}catch(e){$('#mode').textContent='Chưa kết nối được kho dữ liệu: '+errMsg(e)}
   let me=null;try{me=JSON.parse(localStorage.getItem('holo:me'))}catch(e){}
   if(me&&me.u&&ST){try{const a=await ST.get('accounts/'+me.u);if(a&&(a.role!='admin'||ST.mode=='local'||ST.canEdit)){enter(a,true);return}}catch(e){}}
