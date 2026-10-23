@@ -445,6 +445,7 @@ body.inquiz.lite #grid i{animation-play-state:paused}
 #stu .hero-cat.acat{zoom:.72;min-height:300px;margin-bottom:-24px}
 #adm .hero-cat.acat{zoom:.5;min-height:300px;margin-bottom:-40px}
 @media(max-width:860px){#stu .hero-cat.acat{zoom:.62;min-height:260px}}
+#tm.low{color:var(--no);text-shadow:0 0 8px var(--no);animation:blink 1s infinite}
 /* v6: thông báo không còn che thanh công cụ / bảng câu hỏi */
 #toast{width:max-content;max-width:calc(100vw - 24px);text-align:center;line-height:1.35;border-radius:14px;opacity:0;pointer-events:none;transition:transform .25s,opacity .2s}
 #toast.on{opacity:1}
@@ -733,7 +734,14 @@ function upd(){
 function go(i){cur=i;const el=$('#c-'+qs[i].k);$('#pal').classList.remove('open');chips();if(el.classList.contains('hide'))return;el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
 function jumpTo(f){const idx=qs.map((_,i)=>i).filter(i=>f(qs[i]));if(idx.length)go(idx.find(i=>i>cur)??idx[0])}
 /* ---------- Đồng hồ đếm giờ ---------- */
-function tick(){if(done||document.hidden||!qs.length||$('#quiz').classList.contains('hide'))return;const s=Math.floor((Date.now()-t0)/1000);$('#tm').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function tick(){if(done||document.hidden||!qs.length||$('#quiz').classList.contains('hide'))return;const el=Math.floor((Date.now()-t0)/1000),lim=(CUR&&CUR.mins)?CUR.mins*60:0,s=lim?Math.max(0,lim-el):el,T=$('#tm');
+  T.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');T.classList.toggle('low',!!lim&&s<=60);T.title=lim?'Thời gian còn lại':'Thời gian đã làm';
+  if(!lim)return;
+  if(TW.k!==t0)TW={k:t0};
+  if(s<=300&&s>60&&!TW.a&&lim>600){TW.a=1;toast('Còn 5 phút')}
+  if(s<=60&&s>0&&!TW.b&&lim>120){TW.b=1;toast('Còn 1 phút!')}
+  if(s<=0){$('#md').classList.remove('on');toast('Hết giờ! Bài được nộp tự động');finish()}}
+let TW={};
 setInterval(tick,1000);
 /* ---------- Nộp bài và kết quả ---------- */
 function submit(){const r=remaining().length;ask(r?`Còn ${r} câu chưa làm. Mèo hơi lo đó… bạn vẫn muốn nộp bài chứ?`:'Bạn đã làm hết các câu. Nộp bài nhé?',r?'Vẫn nộp bài':'Nộp bài',finish,r?CATS[1]:CATS[4])}
@@ -741,7 +749,7 @@ function confetti(){const C=['#00f0ff','#ff2bd6','#2dffa0','#ffb800','#ffffff'];
 function finish(){
   done=true;clearSess();const mq=qs.filter(q=>q.type=='m'),tq=qs.filter(q=>q.type=='t'),m=mq.filter(right).length;
   let st=0;tq.forEach(q=>q.s.forEach(s=>{if(ans[q.k+'-'+s.j]===s.v)st++}));
-  const nst=tq.reduce((a,q)=>a+q.s.length,0),tot=mq.length+nst,p=tot?(m+st)/tot:0,un=remaining().length,ok=qs.filter(right).length,sec=Math.round((Date.now()-t0)/1000);
+  const nst=tq.reduce((a,q)=>a+q.s.length,0),tot=mq.length+nst,p=tot?(m+st)/tot:0,un=remaining().length,ok=qs.filter(right).length,sec=Math.min(Math.round((Date.now()-t0)/1000),(CUR&&CUR.mins)?CUR.mins*60:1e9);
   const bad=new Set(qs.filter(q=>!right(q)).map(q=>q.k)),nm=esc($('#nm').value.trim());
   const col=p>=.85?'var(--ok)':p>=.5?'var(--cy)':'var(--no)',rk=p>=.9?'S':p>=.75?'A':p>=.5?'B':'C';
   const bd=p>=.85?{img:CATS[2],say:'Nhiệm vụ hoàn hảo! mèo gửi tặng bạn bó hoa này',cls:''}:p>=.5?{img:CATS[4],say:'Nhiệm vụ hoàn thành! Chỉ còn vài lỗi nhỏ trong hệ thống',cls:''}:{img:CATS[3],say:'Cảnh báo: hệ thống quá tải! Ôn lại rồi thử lại nhé',cls:'sad'};
@@ -1065,8 +1073,8 @@ function openSet(s){
   let P;try{P=JSON.parse(s.payload)}catch(e){toast('Bài bị lỗi dữ liệu');return}
   M=P.M.map(([t,o,c])=>[esc(t),o.map(esc),c]);
   T=P.T.map(x=>{const a=x.s.map(([t,v])=>[esc(t),v?1:0]);a.stem=x.stem?esc(x.stem):'';return a});
-  CUR={code:s.code,title:s.title};CONFIG.title=s.title;
-  CONFIG.subtitle='Mã bài '+s.code+' · '+M.length+' trắc nghiệm · '+T.length+' đúng/sai';
+  CUR={code:s.code,title:s.title,mins:+s.mins||0};CONFIG.title=s.title;
+  CONFIG.subtitle='Mã bài '+s.code+' · '+M.length+' trắc nghiệm · '+T.length+' đúng/sai'+(CUR.mins?' · '+CUR.mins+' phút':' · không giới hạn thời gian');
   transition(()=>{home();$('#nm').value=ME?ME.name:'';show('home')});
 }
 async function recordResult(score,ok,total,un,sec){
@@ -1084,7 +1092,15 @@ async function loadAdm(){
   }catch(e){$('#admbody').innerHTML='<p class="err">'+esc(errMsg(e))+'</p>';return}
   admView();
 }
-const DB=[['Dưới 5',0,5],['5 đến dưới 7',5,7],['7 đến dưới 8,5',7,8.5],['8,5 trở lên',8.5,10.01]];
+const DB=[['Dưới 5',0,5],['5 đến dưới 7',5,7],['7 đến dưới 8,5',7,8.5],['8,5 đến dưới 10',8.5,9.995],['Điểm 10',9.995,10.01]];
+const MINS=[0,15,30,45,60,90,120];
+function minOpts(v){const a=MINS.includes(v)?MINS:[...MINS,v].sort((x,y)=>x-y);return a.map(m=>`<option value="${m}" ${m==v?'selected':''}>${m?m+' phút':'Không giới hạn'}</option>`).join('')+'<option value="c">Khác…</option>'}
+function askMins(c){const r=prompt('Nhập số phút (1 đến 300):',c||45);if(r===null)return null;const n=Math.round(+r);if(n>=1&&n<=300)return n;toast('Số phút không hợp lệ');return null}
+document.addEventListener('change',async e=>{const t=e.target;
+  if(t.matches&&t.matches('[data-mins]')){const d=ADM.drafts[+t.closest('.dr').dataset.i];if(!d)return;let v=t.value;if(v=='c'){v=askMins(d.mins);if(v===null){drawDrafts();return}}d.mins=+v;drawDrafts()}
+  else if(t.matches&&t.matches('[data-setmins]')){const code=t.dataset.c,st=ADM.sets.find(x=>x.code==code);if(!st)return;let v=t.value;if(v=='c'){v=askMins(st.mins);if(v===null){admView();return}}
+    const {id,...doc}=st;try{await ST.set('sets/'+code,{...doc,mins:+v});toast('Đã đặt thời gian: '+(+v?v+' phút':'không giới hạn'));await loadAdm()}catch(er){toast(errMsg(er));admView()}}
+});
 function copyText(t){const ok=()=>toast('Đã chép kết quả');if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,()=>toast('Không chép được, hãy thử lại'));else{const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){toast('Không chép được')}a.remove()}}
 function exportCSV(rows){
   const q=v=>{v=String(v==null?'':v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'};
@@ -1120,16 +1136,17 @@ d) Việt Nam không giáp biển.</pre>
      <li>Hoặc có bảng đáp án cuối file, bắt đầu bằng dòng "ĐÁP ÁN": "1. B  2. C" và "6. a-Đ, b-S, c-Đ, d-S".</li>
      <li>Trước khi đăng, bạn xem lại và sửa đáp án ngay trên màn hình xem trước.</li></ul></details></div>
     <div class="sets">${n?ADM.sets.map(s=>`<div class="sc ${s.open===false?'off':''}"><div class="hl"><span class="stt">${esc(s.title)}</span>${s.open===false?'<span class="tag b">Đã khoá</span>':''}</div>
-     <div class="bigcode">${esc(s.code)}</div><p class="mode">${s.nm} trắc nghiệm · ${s.nt} đúng/sai · đăng ${fmtD(s.at)} · ${cnt[s.code]||0} lượt làm</p>
-     <div class="racts" style="justify-content:flex-start"><button type="button" data-a="copy" data-c="${esc(s.code)}">Chép mã</button><button type="button" data-a="try" data-c="${esc(s.code)}">Làm thử</button><button type="button" data-a="tog" data-c="${esc(s.code)}">${s.open===false?'Mở lại':'Khoá'}</button><button type="button" data-a="regen" data-c="${esc(s.code)}">Đổi mã</button><button type="button" data-a="del" data-c="${esc(s.code)}">Xoá</button></div></div>`).join(''):'<div class="empty" style="grid-column:1/-1">Chưa có bài nào. Tải file Word lên để tạo mã bài đầu tiên.</div>'}</div>`;
+     <div class="bigcode">${esc(s.code)}</div><p class="mode">${s.nm} trắc nghiệm · ${s.nt} đúng/sai · ${s.mins?s.mins+' phút':'không giới hạn'} · đăng ${fmtD(s.at)} · ${cnt[s.code]||0} lượt làm</p>
+     <label class="lbl">Thời gian làm bài<select data-setmins data-c="${esc(s.code)}">${minOpts(s.mins||0)}</select></label>
+      <div class="racts" style="justify-content:flex-start"><button type="button" data-a="copy" data-c="${esc(s.code)}">Chép mã</button><button type="button" data-a="try" data-c="${esc(s.code)}">Làm thử</button><button type="button" data-a="tog" data-c="${esc(s.code)}">${s.open===false?'Mở lại':'Khoá'}</button><button type="button" data-a="regen" data-c="${esc(s.code)}">Đổi mã</button><button type="button" data-a="del" data-c="${esc(s.code)}">Xoá</button></div></div>`).join(''):'<div class="empty" style="grid-column:1/-1">Chưa có bài nào. Tải file Word lên để tạo mã bài đầu tiên.</div>'}</div>`;
     bindUp();drawDrafts();
   }else if(ADM.tab=='res'){
     const codes=[...new Set(ADM.res.map(r=>r.code))],rows=ADM.res.filter(r=>ADM.rf=='all'||r.code==ADM.rf).slice(0,300);
     const avg=rows.length?rows.reduce((a,r)=>a+r.score,0)/rows.length:0;
     B.innerHTML=`<div class="set"><div class="fr"><h3>Kết quả</h3><span class="sp"></span><select id="rf" aria-label="Lọc theo bài"><option value="all">Tất cả bài</option>${codes.map(c=>{const t=(ADM.res.find(r=>r.code==c)||{}).title;return `<option value="${esc(c)}" ${ADM.rf==c?'selected':''}>${esc(t||'')} (${esc(c)})</option>`}).join('')}</select></div>
     <p class="mode">${rows.length} lượt làm · điểm trung bình ${avg.toFixed(2)}${rows.length?` · cao nhất ${Math.max(...rows.map(r=>r.score)).toFixed(2)} · thấp nhất ${Math.min(...rows.map(r=>r.score)).toFixed(2)}`:''}</p>
-    ${rows.length?`<div class="bars">${DB.map(([n,lo,hi])=>{const c=rows.filter(r=>r.score>=lo&&r.score<hi).length;return `<div><div class="in"><span>${n}</span><span class="sp"></span><b>${c}</b></div><div class="bar2"><i style="width:${c/rows.length*100}%"></i></div></div>`}).join('')}</div><button type="button" id="rexp">⬇ Xuất Excel (CSV)</button>`:''}</div>
-    ${rows.length?`<div class="tw"><table class="tb"><thead><tr><th>Học sinh</th><th>Bài</th><th>Điểm</th><th>Đúng</th><th>Thời gian</th><th>Lúc</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.name||r.u)}<br><span class="lbl">${esc(r.u)}</span></td><td>${esc(r.title)}<br><span class="lbl">${esc(r.code)}${r.full===false?' · một phần':''}</span></td><td class="nw"><b>${(+r.score).toFixed(2)}</b>/10</td><td class="nw">${r.ok}/${r.total}</td><td class="nw">${fmtT(r.sec||0)}</td><td class="nw">${fmtD(r.at)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có học sinh nào làm bài.</div>'}`;
+    ${rows.length?`<div class="bars">${DB.map(([n,lo,hi])=>{const c=rows.filter(r=>r.score>=lo&&r.score<hi).length;return `<div><div class="in"><span${n=='Điểm 10'?' style="color:var(--am)"':''}>${n=='Điểm 10'?'🏆 ':''}${n}</span><span class="sp"></span><b>${c} · ${Math.round(c/rows.length*100)}%</b></div><div class="bar2"><i style="width:${c/rows.length*100}%"></i></div></div>`}).join('')}</div><button type="button" id="rexp">⬇ Xuất Excel (CSV)</button>`:''}</div>
+    ${rows.length?`<div class="tw"><table class="tb"><thead><tr><th>Học sinh</th><th>Bài</th><th>Điểm</th><th>Đúng</th><th>Thời gian</th><th>Lúc</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.name||r.u)}<br><span class="lbl">${esc(r.u)}</span></td><td>${esc(r.title)}<br><span class="lbl">${esc(r.code)}${r.full===false?' · một phần':''}</span></td><td class="nw"><b>${(+r.score).toFixed(2)}</b>/10${r.score>=9.995?' 🏆':''}</td><td class="nw">${r.ok}/${r.total}</td><td class="nw">${fmtT(r.sec||0)}</td><td class="nw">${fmtD(r.at)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có học sinh nào làm bài.</div>'}`;
     $('#rf').onchange=e=>{ADM.rf=e.target.value;admView()};if($('#rexp'))$('#rexp').onclick=()=>exportCSV(ADM.res.filter(r=>ADM.rf=='all'||r.code==ADM.rf));
   }else{
     const by={};ADM.res.forEach(r=>(by[r.u]=by[r.u]||[]).push(r));
@@ -1165,6 +1182,7 @@ function drawDrafts(){
   el.innerHTML=ADM.drafts.map((d,i)=>{const need=needN(d),tot=d.M.length+d.T.length;
     return `<div class="dr" data-i="${i}"><div class="hl"><b>${esc(d.file)}</b><span class="mode">${d.M.length} trắc nghiệm · ${d.T.length} đúng/sai</span></div>
     <label class="lbl" for="dt${i}">Tên bài</label><input type="text" id="dt${i}" data-title value="${esc(d.title)}" maxlength="80">
+    <label class="lbl">Thời gian làm bài<select data-mins>${minOpts(d.mins||0)}</select></label>
     ${d.warns.map(w=>`<p class="warn">${esc(w)}</p>`).join('')}
     ${need?`<p class="warn">Còn ${need} đáp án chưa xác định. Bấm chọn đáp án đúng ở các câu viền vàng bên dưới.</p>`:''}
     ${tot?'':'<p class="warn">Không tìm thấy câu hỏi nào. Xem lại mục hướng dẫn soạn file.</p>'}
@@ -1181,7 +1199,7 @@ async function publish(i,btn){
     const payload=JSON.stringify({M:d.M.map(q=>[q.t,q.o,q.c]),T:d.T.map(q=>({stem:q.stem||'',s:q.s.map(s=>[s.t,s.v?1:0])}))});
     if(payload.length>230000){toast('File quá lớn để lưu. Hãy chia nhỏ đề.');return}
     const code=await newCode();
-    await ST.set('sets/'+code,{code,title:(d.title||'').trim()||'Bài tập',payload,nm:d.M.length,nt:d.T.length,open:true,at:Date.now(),by:ME.u});
+    await ST.set('sets/'+code,{code,title:(d.title||'').trim()||'Bài tập',payload,nm:d.M.length,nt:d.T.length,open:true,mins:+d.mins||0,at:Date.now(),by:ME.u});
     ADM.drafts.splice(i,1);toast('Đã đăng. Mã bài: '+code);await loadAdm();
   }catch(e){toast(errMsg(e))}finally{btn.disabled=false}
 }
