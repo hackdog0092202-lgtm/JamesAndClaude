@@ -1263,7 +1263,7 @@ function showStu(){show('stu');applyAva();$('#sname').textContent=ME.name;$('#sc
 async function renderStu(){
   $('#shist').innerHTML='<p class="mode">Đang tải…</p>';
   let rs=[];
-  try{rs=(await ST.list('results',['u',ME.u])).sort((a,b)=>b.at-a.at)}catch(e){$('#shist').innerHTML='<p class="err">'+esc(errMsg(e))+'</p>';return}
+  try{rs=(await ST.list('results',['u',ME.u])).filter(r=>!r.hideStu).sort((a,b)=>b.at-a.at)}catch(e){$('#shist').innerHTML='<p class="err">'+esc(errMsg(e))+'</p>';return}
   window.SH=rs;const n=rs.length,avg=n?rs.reduce((a,r)=>a+r.score,0)/n:0,best=n?Math.max(...rs.map(r=>r.score)):0;
   $('#sstats').innerHTML=[[n,'lượt làm'],[avg.toFixed(1),'điểm trung bình'],[best.toFixed(1),'điểm cao nhất']].map(([a,b])=>`<div class="stat"><b>${a}</b>${b}</div>`).join('');
   $('#shist').innerHTML=n?'<div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button type="button" class="dg" data-delall="1">🗑 Xóa tất cả lịch sử</button></div>'+rs.slice(0,60).map(r=>{const c=r.score>=8.5?'g':r.score>=5?'m':'b';
@@ -1299,7 +1299,7 @@ function showAdm(){show('adm');applyAva();$('#aname').textContent=ME.name;loadAd
 async function loadAdm(){
   $('#admbody').innerHTML='<p class="mode">Đang tải dữ liệu…</p>';
   try{const [s,r,a]=await Promise.all([ST.list('sets'),ST.list('results'),ST.list('accounts')]);
-    ADM.sets=s.sort((x,y)=>x.at-y.at);ADM.res=r.sort((x,y)=>y.at-x.at);ADM.acc=a.filter(x=>x.role=='student').sort((x,y)=>(x.name||'').localeCompare(y.name||''));
+    ADM.sets=s.sort((x,y)=>x.at-y.at);ADM.res=r.filter(x=>!x.hideAdm).sort((x,y)=>y.at-x.at);ADM.acc=a.filter(x=>x.role=='student').sort((x,y)=>(x.name||'').localeCompare(y.name||''));
   }catch(e){$('#admbody').innerHTML='<p class="err">'+esc(errMsg(e))+'</p>';return}
   admView();
 }
@@ -1428,7 +1428,11 @@ async function setAct(a,code){
   }catch(e){toast(errMsg(e))}
 }
 /* ---------- Xóa kết quả (có hộp xác nhận) ---------- */
-function delRes(ids,msg,after){if(!ids.length)return;ask('Bạn có chắc chắn xóa không? '+msg,'Xóa',async()=>{try{await Promise.all(ids.map(id=>ST.del('results/'+id)));toast('Đã xóa '+ids.length+' kết quả');after()}catch(e){toast(errMsg(e))}},CATS[1],'Hủy')}
+function delRes(ids,msg,after){if(!ids.length)return;
+  const adm=ME&&ME.role=='admin',flag=adm?'hideAdm':'hideStu',src=adm?(ADM.res||[]):(window.SH||[]);
+  ask('Bạn có chắc chắn xóa không? '+msg,'Xóa',async()=>{try{
+    await Promise.all(ids.map(id=>{const r=src.find(x=>x.id==id);if(!r)return;const {id:_i,...doc}=r;return ST.set('results/'+id,{...doc,[flag]:true})}));
+    toast('Đã xóa '+ids.length+' kết quả');after()}catch(e){toast(errMsg(e))}},CATS[1],'Hủy')}
 async function accAct(a,u){
   const acc=ADM.acc.find(x=>x.u==u);if(!acc)return;
   const {id,...doc}=acc;
