@@ -63,6 +63,14 @@ window.INTRO_SFX="data:audio/mpeg;base64,SUQzBAAAAAAAfFRYWFgAAAASAAADbWFqb3JfYnJ
 <script>
 /* ===== MÀN HÌNH GIỚI THIỆU v2: chạy độc lập, không chặn việc khởi động Firebase / ứng dụng ===== */
 (function(){
+/* Lưu mẫu HTML của intro để có thể chạy lại (nút "Xem lại intro") sau khi phần tử đã bị gỡ */
+const TPL=document.getElementById('intro')?document.getElementById('intro').outerHTML:'';
+let active=false;
+function run(){
+if(active)return false;
+let el=document.getElementById('intro');
+if(!el&&TPL){document.body.insertAdjacentHTML('afterbegin',TPL);el=document.getElementById('intro')}
+if(!el)return false;
 /* ---- CÁC GIÁ TRỊ CÓ THỂ CHỈNH ---- */
 const INTRO_CFG={
   holdSeconds:0.9,          // thời gian giữ để mở hết mắt (giây)
@@ -81,13 +89,9 @@ const INTRO_CFG={
   spinSpeed:0.8,            // TỐC ĐỘ XOAY: số giây mỗi vòng của Mangekyō khi đã quay nhanh (nhỏ hơn = nhanh hơn)
   shake:true                // bật/tắt rung màn hình khi mắt mở hết
 };
-const el=document.getElementById('intro');if(!el)return;
 const root=document.documentElement;
-let skipIt=false;
-try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)skipIt=true}catch(e){}
-try{if(sessionStorage.getItem('introSeen')==='1')skipIt=true}catch(e){}
-try{const m=JSON.parse(localStorage.getItem('holo:me'));if(m&&m.u)skipIt=true}catch(e){}
-if(skipIt||!el.animate){el.remove();return}
+if(!el.animate){el.remove();return false}
+active=true;
 
 const $=id=>document.getElementById(id);
 const skipBtn=$('introSkip'),sndBtn=$('introSnd'),hint=$('introHint'),eyes=$('introEyes'),stage=$('introStage'),hold=$('introHold'),rp=$('introRp'),
@@ -201,7 +205,6 @@ const T=s=>Math.round(s*K*1000);
 const anims=[],timers=[];
 let seq=false,finished=false,skipping=false;
 function A(node,kf,delay,dur,ease){if(!node)return;const a=node.animate(kf,{delay:T(delay),duration:T(dur),easing:ease||'ease-in-out',fill:'forwards'});anims.push(a);return a}
-function markSeen(){try{sessionStorage.setItem('introSeen','1')}catch(e){}}
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const easeIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 function bez(x1,y1,x2,y2){
@@ -366,11 +369,12 @@ twitch();
 
 /* ---- đồng tử đi theo con trỏ ---- */
 let followOn=false,tx=0,ty=0,fx0=0,fy0=0;
-addEventListener('pointermove',e=>{
+function onMove(e){
   if(!followOn)return;
   const nx=clamp((e.clientX-innerWidth/2)/(innerWidth/2),-1,1),ny=clamp((e.clientY-innerHeight/2)/(innerHeight/2),-1,1);
   tx=nx*4.5;ty=ny*3.2;
-},{passive:true});
+}
+addEventListener('pointermove',onMove,{passive:true});
 
 /* ---- vòng lặp chính ---- */
 let raf=0,last=0,spin=false,ang=0,spinT0=0,hole=null;
@@ -420,10 +424,10 @@ paint(0);startLoop();
 
 /* ---- kết thúc ---- */
 function finish(){
-  if(finished)return;finished=true;
+  if(finished)return;finished=true;active=false;
   timers.forEach(clearTimeout);clearTimeout(twT);cancelAnimationFrame(raf);
   anims.forEach(a=>{try{a.cancel()}catch(e){}});
-  removeEventListener('keydown',onKey,true);removeEventListener('pointerup',rel,true);removeEventListener('touchend',rel,true);removeEventListener('click',rel,true);removeEventListener('pointercancel',rel,true);removeEventListener('blur',rel);removeEventListener('resize',onResize);
+  removeEventListener('keydown',onKey,true);removeEventListener('pointerup',rel,true);removeEventListener('touchend',rel,true);removeEventListener('click',rel,true);removeEventListener('pointercancel',rel,true);removeEventListener('blur',rel);removeEventListener('resize',onResize);removeEventListener('pointermove',onMove);
   document.removeEventListener('focusin',guard,true);document.removeEventListener('DOMContentLoaded',onDCL);document.removeEventListener('visibilitychange',onVis);
   stopSfx();
   if(AC){setTimeout(()=>{try{AC.close()}catch(e){}},2600)}
@@ -458,7 +462,7 @@ function revealSimple(ms){
    Mốc thời gian dưới đây tính từ lúc Mangekyō hiện (reveal). */
 const TR=2.0,TRD=.9,WEL=TR+1.1,ZO=TR+2.3;
 function begin(){
-  if(seq||finished)return;seq=true;markSeen();clearTimeout(twT);
+  if(seq||finished)return;seq=true;clearTimeout(twT);
   holding=false;kfast=false;paint(1);followOn=true;
   hold.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'});
   wb.style.visibility='visible';
@@ -539,7 +543,7 @@ function zoom(){
 }
 /* ---- bỏ qua / phím ---- */
 function doSkip(){
-  if(finished||skipping)return;skipping=true;markSeen();hole=null;stopSfx();
+  if(finished||skipping)return;skipping=true;hole=null;stopSfx();
   timers.forEach(clearTimeout);clearTimeout(twT);
   const op=parseFloat(getComputedStyle(el).opacity)||1;
   anims.forEach(a=>{try{a.cancel()}catch(e){}});
@@ -559,6 +563,32 @@ function onKey(e){
   if((e.key==='Enter'||e.key===' ')&&!e.repeat&&!seq&&!skipping){kfast=true;if(soundOn){unlockAudio();prepSfx()}}
 }
 addEventListener('keydown',onKey,true);
+return true;
+}
+/* Chạy lại intro theo yêu cầu (nút ⚙ "Xem lại intro"): bỏ qua mọi điều kiện, kể cả giảm chuyển động */
+window.runIntro=function(){return run()};
+/* ---- Quyết định có hiện intro khi mở trang hay không ----
+   ?intro=0 bỏ qua · ?intro=1 ép chạy · tắt trong ⚙ thì bỏ qua · đang đăng nhập sẵn thì bỏ qua
+   (nếu đăng nhập tự động thất bại, startApp sẽ gọi lại intro) · giảm chuyển động thì bỏ qua và báo ở màn đăng nhập */
+function decide(){
+  let q=null;try{q=new URLSearchParams(location.search).get('intro')}catch(e){}
+  if(q==='0')return 'off';
+  if(q==='1')return 'run';
+  let pf=null;try{pf=JSON.parse(localStorage.getItem('holo:pref'))}catch(e){}
+  if(pf&&pf.intro===false)return 'off';
+  try{const m=JSON.parse(localStorage.getItem('holo:me'));if(m&&m.u)return 'login'}catch(e){}
+  try{if(matchMedia('(prefers-reduced-motion: reduce)').matches&&!(pf&&pf.introRM===true))return 'reduced'}catch(e){}
+  return 'run';
+}
+try{sessionStorage.removeItem('introSeen')}catch(e){}  /* dọn khóa cũ, không còn dùng */
+const d=decide();
+try{console.info('[intro]',d)}catch(e){}
+if(d==='run')run();
+else{
+  const e0=document.getElementById('intro');if(e0)e0.remove();
+  if(d==='login')window.__introAfterAuth=true;
+  if(d==='reduced')window.__introReducedSkip=true;
+}
 })();
 </script>
 <title>AzerNova</title>
@@ -1217,6 +1247,7 @@ button.dg:hover{background:rgba(255,59,92,.22);box-shadow:inset 0 0 14px rgba(25
     <p class="err" id="aerr" role="alert"></p>
     <button id="asub" class="p" type="button" style="font-size:1.1rem;padding:11px 20px">Đăng nhập</button>
     <p class="mode" id="mode"></p>
+    <p class="mode hide" id="introNote">Intro bị tắt vì hệ thống đang tắt hiệu ứng chuyển động. Bấm ⚙ để xem lại. <button type="button" id="introAlways" style="padding:2px 10px;font-size:.78rem">Luôn hiện intro</button></p>
    </div>
   </div>
   <div class="hero-cat acat"><div class="ring r1 heavy"></div><div class="ring r2 heavy"></div><div class="orbit heavy"><i></i></div><div class="radar"></div><div class="proj"></div><div class="frame" id="acatf"></div></div>
@@ -1307,6 +1338,9 @@ button.dg:hover{background:rgba(255,59,92,.22);box-shadow:inset 0 0 14px rgba(25
  <label><input type="checkbox" id="oS"> Âm thanh và rung nhẹ</label>
  <label><input type="checkbox" id="oB"> Hiệu ứng khởi động khi chuyển màn (mức Đầy đủ)</label>
  <label><input type="checkbox" id="oT"> Hiệu ứng chữ (tiêu đề, dòng gõ, lấp lánh)</label>
+ <label><input type="checkbox" id="oI"> Hiện intro khi mở trang</label>
+ <label><input type="checkbox" id="oR"> Vẫn hiện intro khi hệ thống tắt hiệu ứng chuyển động</label>
+ <button id="gintro" type="button">Xem lại intro</button>
  <button id="gauto" type="button">Tự chọn theo thiết bị</button>
  <p class="gdesc" style="min-height:0">Phím tắt: G mở bảng này (ngoài lúc làm bài), Esc để đóng.</p>
 </div>
@@ -1381,13 +1415,13 @@ const im=(s,c='')=>`<span class="holo ${c}"><img src="${s}" alt="Hologram mèo">
 const LET='ABCDEFGH';
 let S={sq:1,sa:1,prac:0,part:'all'},qs=[],ans={},flags=new Set(),done=false,filt='all',cur=-1,t0=0,extra=[],lastP=0,busy=false;
 /* ---------- Tùy chọn hiệu ứng / âm thanh (lưu trên máy) ---------- */
-const PREF={lv:2,snd:false,fz:100};
+const PREF={lv:2,snd:false,fz:100,intro:true,introRM:false};
 (()=>{let s=null;try{s=JSON.parse(localStorage.getItem('holo:pref'))}catch(e){}
   if(s){if(s.lv===undefined)s.lv=s.fx===false?0:2;Object.assign(PREF,s)}else PREF.lv=matchMedia('(prefers-reduced-motion: reduce)').matches?0:(matchMedia('(pointer:coarse)').matches||innerWidth<860||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4)?1:2})();
 const savePref=()=>{try{localStorage.setItem('holo:pref',JSON.stringify(PREF))}catch(e){}};
 const GD=['Tắt mọi hiệu ứng nền và chuyển động. Tiết kiệm pin nhất.','Sao nhẹ, lưới và tinh vân tĩnh, gợn sóng khi chạm. Hợp điện thoại và máy yếu.','Mưa mã, sao băng, hành tinh, con trỏ hologram và chuyển cảnh. Cần máy khỏe.'];
 const autoLv=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:(matchMedia('(pointer:coarse)').matches||innerWidth<860||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4)?1:2;
-function applyPref(){const c=document.documentElement.classList;c.toggle('nofx',!PREF.lv);c.toggle('lite',PREF.lv==1);$('#oS').checked=PREF.snd;$('#oB').checked=PREF.boot!==false;$('#oT').checked=PREF.txt!==false;c.toggle('notxt',PREF.txt===false);document.documentElement.style.fontSize=PREF.fz+'%';
+function applyPref(){const c=document.documentElement.classList;c.toggle('nofx',!PREF.lv);c.toggle('lite',PREF.lv==1);$('#oS').checked=PREF.snd;$('#oI').checked=PREF.intro!==false;$('#oR').checked=PREF.introRM===true;$('#oB').checked=PREF.boot!==false;$('#oT').checked=PREF.txt!==false;c.toggle('notxt',PREF.txt===false);document.documentElement.style.fontSize=PREF.fz+'%';
   $$('#gF button').forEach(b=>b.classList.toggle('on',+b.dataset.v==PREF.lv));$$('#gZ button').forEach(b=>b.classList.toggle('on',+b.dataset.v==PREF.fz));$$('#gF button,#gZ button').forEach(b=>b.setAttribute('aria-pressed',b.classList.contains('on')));$('#gdesc').textContent=GD[PREF.lv]}
 const memes=()=>[...CONFIG.memes,...extra],pool=()=>[...CATS,...memes()];
 const isDone=q=>q.type=='m'?ans[q.k]!==undefined:q.s.every(s=>ans[q.k+'-'+s.j]!==undefined);
@@ -2039,6 +2073,10 @@ addEventListener('keydown',e=>{if(e.key=='Escape'&&gp.classList.contains('on')){
 $('#gF').onclick=e=>{const b=e.target.closest('button');if(b)setLv(+b.dataset.v)};
 $('#gZ').onclick=e=>{const b=e.target.closest('button');if(b){PREF.fz=+b.dataset.v;savePref();applyPref();measure()}};
 $('#oB').onchange=()=>{PREF.boot=$('#oB').checked;savePref()};
+$('#oI').onchange=()=>{PREF.intro=$('#oI').checked;savePref();toast(PREF.intro?'Sẽ hiện intro khi mở trang':'Đã tắt intro khi mở trang')};
+$('#oR').onchange=()=>{PREF.introRM=$('#oR').checked;savePref();toast(PREF.introRM?'Intro sẽ hiện dù hệ thống giảm chuyển động':'Intro sẽ tôn trọng cài đặt giảm chuyển động')};
+$('#introAlways').onclick=()=>{PREF.introRM=true;PREF.intro=true;savePref();applyPref();$('#introNote').classList.add('hide');if(window.runIntro)window.runIntro()};
+$('#gintro').onclick=()=>{gfxToggle(false);if(!$('#quiz').classList.contains('hide')){toast('Hãy quay về trang chủ rồi xem lại intro');return}if(window.runIntro)window.runIntro()};
 $('#gauto').onclick=()=>{setLv(autoLv());toast('Đã chọn mức '+['Tắt','Nhẹ','Đầy đủ'][PREF.lv]+' theo thiết bị')};
 $('#ashow').onchange=()=>{$('#ap').type=$('#ap2').type=$('#ashow').checked?'text':'password'};
 new MutationObserver(()=>document.body.classList.toggle('palopen',$('#pal').classList.contains('open'))).observe($('#pal'),{attributes:true,attributeFilter:['class']});
@@ -2214,6 +2252,9 @@ async function startApp(){
   let me=null;try{me=JSON.parse(localStorage.getItem('holo:me'))}catch(e){}
   if(me&&me.u&&ST){try{const a=await ST.get('accounts/'+me.u);if(a&&(a.role!='admin'||ST.mode=='local'||ST.canEdit)){enter(a,true);return}}catch(e){}}
   show('auth');
+  /* đã có tài khoản lưu nhưng đăng nhập tự động không thành công: hiện intro như người chưa đăng nhập */
+  if(window.__introAfterAuth){window.__introAfterAuth=false;let r=false;try{r=matchMedia('(prefers-reduced-motion: reduce)').matches&&PREF.introRM!==true}catch(e){}if(r)window.__introReducedSkip=true;else if(window.runIntro)window.runIntro()}
+  if(window.__introReducedSkip)$('#introNote').classList.remove('hide');
 }
 startApp();
 
